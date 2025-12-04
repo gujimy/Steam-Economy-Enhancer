@@ -4,7 +4,7 @@
 // @namespace    https://github.com/Nuklon
 // @author       Nuklon
 // @license      MIT
-// @version      7.1.17
+// @version      7.1.22
 // @description  Enhances the Steam Inventory and Steam Market.
 // @description:zh-CN  增强Steam库存和Steam市场功能。
 // @match        https://steamcommunity.com/id/*/inventory*
@@ -1006,7 +1006,7 @@
 
     // Get the item name id from a market item.
     SteamMarket.prototype.getCurrentMarketItemNameId = function (appid, market_name, callback) {
-        const url = `${window.location.origin}/market/listings/${appid}/${escapeURI(market_name)}`;
+        const url = `${window.location.origin}/market/listings/${appid}/${encodeURIComponent(market_name)}`;
 
         const options = { method: 'GET' };
 
@@ -1104,8 +1104,7 @@
                         country: country,
                         language: 'english',
                         currency: currencyId,
-                        item_nameid: item_nameid,
-                        two_factor: 0
+                        item_nameid: item_nameid
                     }
                 };
 
@@ -1178,17 +1177,6 @@
     };
     //#endregion
 
-    // Cannot use encodeURI / encodeURIComponent, Steam only escapes certain characters.
-    function escapeURI(name) {
-        let previousName = '';
-        while (previousName != name) {
-            previousName = name;
-            name = name.replace('?', '%3F').
-                replace('#', '%23').
-                replace('	', '%09');
-        }
-        return name;
-    }
 
     //#region Steam Market / Inventory helpers
     function getMarketHashName(item) {
@@ -2650,15 +2638,14 @@
         }
 
         // Loads all inventories.
-        function loadAllInventories() {
-            const items = [];
-
-            for (const child in getActiveInventory().m_rgChildInventories) {
-                items.push(getActiveInventory().m_rgChildInventories[child]);
+        async function loadAllInventories() {
+            const inventory = getActiveInventory();
+            
+            for (const child of Object.values(inventory.m_rgChildInventories)) {
+                await loadInventories([child]);
             }
-            items.push(getActiveInventory());
-
-            return loadInventories(items);
+            
+            await loadInventories([inventory]);
         }
 
         // Gets the inventory items from the active inventory.
